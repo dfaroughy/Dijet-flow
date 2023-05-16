@@ -1,5 +1,15 @@
 # Byte-compiled / optimized / DLL files
+.DS_Store
 __pycache__/
+main/__pycache__
+main/data/__pycache__
+source/__pycache__
+source/dijet_flow/__pycache__
+source/dijet_flow/data/__pycache__
+source/dijet_flow/models/__pycache__
+source/dijet_flow/models/flows/__pycache__
+source/dijet_flow/utils/__pycache__
+._*
 *.py[cod]
 *$py.class
 
