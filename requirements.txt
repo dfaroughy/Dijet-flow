@@ -4,6 +4,7 @@ h5py
 numpy
 scipy
 pandas
+tables
 tqdm
 matplotlib
 seaborn
