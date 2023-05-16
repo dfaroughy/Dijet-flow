@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 from copy import deepcopy
 
-from dijet_flow.data.transform import GaiaTransform
+from dijet_flow.data.transform import Transform
 
 def calculate_loss(model, data, args, loss_func=None, reduction=torch.mean):
 	if not loss_func: loss_func = args.loss

@@ -5,7 +5,7 @@ from scipy.stats import gaussian_kde
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
-from gaia_deconvolution.utils.base import savefile
+from dijet_flow.utils.base import savefig
 
 sns.set_theme(style="dark")
 

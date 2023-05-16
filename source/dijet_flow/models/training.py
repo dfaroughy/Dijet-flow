@@ -4,15 +4,15 @@ import torch.nn as nn
 import numpy as np
 from tqdm.auto import tqdm
 from copy import deepcopy
-from gaia_deconvolution.models.loss import calculate_loss
-from gaia_deconvolution.data.plots import plot_data_projections, plot_loss
-from gaia_deconvolution.data.transform import GaiaTransform
+from dijet_flow.models.loss import calculate_loss
+from dijet_flow.data.plots import plot_loss
+from dijet_flow.data.transform import Transform
 
 
-class GaiaModel:
+class Model:
 
     def __init__(self, models):
-        super(GaiaModel, self).__init__()
+        super(Model, self).__init__()
         self.model = models
 
     def train(self, training_sample, validation_sample, args, show_plots=True, save_best_state=True):        
@@ -148,15 +148,15 @@ class Evaluate_Epoch(nn.Module):
             self.loss_min = self.loss
             self.patience = 0
             self.best_model = deepcopy(self.model)
-            if show_plots:
-                with torch.no_grad():
-                    sample = self.model.sample(num_samples=self.args.num_gen)
-                    sample = GaiaTransform(sample, torch.zeros(sample.shape),self.args)
-                    sample.mean = torch.tensor(self.args.mean)
-                    sample.std =  torch.tensor(self.args.std)
-                    sample.preprocess(R=self.args.Rmax, reverse=True)
-                    sample.plot('x', title=r'positions Epoch {}'.format(self.epoch), save_dir=self.args.workdir+'/results_plots') 
-                    sample.plot('v', title=r'velocities Epoch {}'.format(self.epoch), save_dir=self.args.workdir+'/results_plots') 
+            # if show_plots:
+            #     with torch.no_grad():
+            #         sample = self.model.sample(num_samples=self.args.num_gen)
+            #         sample = GaiaTransform(sample, torch.zeros(sample.shape),self.args)
+            #         sample.mean = torch.tensor(self.args.mean)
+            #         sample.std =  torch.tensor(self.args.std)
+            #         sample.preprocess(R=self.args.Rmax, reverse=True)
+            #         sample.plot('x', title=r'positions Epoch {}'.format(self.epoch), save_dir=self.args.workdir+'/results_plots') 
+            #         sample.plot('v', title=r'velocities Epoch {}'.format(self.epoch), save_dir=self.args.workdir+'/results_plots') 
             if save_best_state:
                 torch.save(self.best_model.state_dict(), self.args.workdir + '/best_model.pth')       
         else: self.patience += 1

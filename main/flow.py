@@ -8,15 +8,17 @@ import copy
 from copy import deepcopy
 import argparse
 import json
+import h5py
+import pandas as pd
 
 from dijet_flow.utils.base import make_dir, copy_parser, save_arguments
 from dijet_flow.models.flows.norm_flows import masked_autoregressive_flow, coupling_flow
-from dijet_flow.models.training import Train_Model, sampler
+from dijet_flow.models.training import Model
 from dijet_flow.models.loss import neglogprob_loss
 from dijet_flow.data.transform import Transform
 
 sys.path.append("../")
-torch.set_default_dtype(torch.float64)
+# torch.set_default_dtype(torch.float64)
 
 
 '''
@@ -69,7 +71,9 @@ params.add_argument('--dropout',       default=0.1,          help='dropout proba
 
 #... data params:
 
-# params.add_argument('--',       default=               help='', type=)
+params.add_argument('--mass_window',  default=(3000,3300,
+                                               3400,3700),  help='mass window: SB1, SR, SB2', type=tuple)
+
 # params.add_argument('--',       default=               help='', type=)
 # params.add_argument('--',       default=               help='', type=)
 # params.add_argument('--',       default=               help='', type=)
@@ -94,12 +98,25 @@ if __name__ == '__main__':
     #...get datasets, preprocess them
 
     data_file =  "./data/events_anomalydetection_v2.features_with_jet_constituents.h5"
-    data = h5py.File(data_file)
+    lhco = pd.read_hdf(data_file)
+    lhco = torch.tensor(lhco.to_numpy())
 
-    #...smear and preprocess data
+    dijets = Transform(lhco, args)
 
-    dijet = Transform(data)
-   
+    dijets.get_sidebands() # dijets from both Side bands
+    dijets.logit() # dijets from both Side bands
+
+    dijets.get_sidebands() # dijets from both Side bands
+
+    print(dijets.leading[0], dijets.subleading[0], dijets.jj[0])
+    #...smear and preprocess data    
+
+    # dijet = Transform(data)
+
+
+
+
+
 
     # gaia.get_stars_near_sun(self, R=args.radius)
 
