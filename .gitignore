@@ -13,6 +13,8 @@ source/dijet_flow/utils/__pycache__
 *.py[cod]
 *$py.class
 
+main/data/*
+
 # C extensions
 *.so
 
