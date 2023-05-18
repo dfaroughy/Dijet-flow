@@ -12,7 +12,11 @@ def calculate_loss(model, data, args, loss_func=None, reduction=torch.mean):
 	return loss
 
 def neglogprob_loss(model, batch, args):
+	if args.context: 
+		context = batch[:, args.dim:]
+		context = context.to(args.device)
+	else: context = None
 	batch = batch[:, :args.dim]
 	batch = batch.to(args.device)
-	loss = - model.log_prob(batch)
+	loss = - model.log_prob(input=batch, context=context)
 	return loss
