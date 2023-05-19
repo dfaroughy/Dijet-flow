@@ -1,6 +1,6 @@
 import torch
 
-from dijet_flow.data.plots import jet_plot_routine
+from dijet_flow.data.plots import jet_plot_routine_single
 from dijet_flow.utils.functions import logit, expit
 from dijet_flow.utils.collider import em2ptepm, inv_mass
 
@@ -9,8 +9,10 @@ class EventTransform:
 
     def __init__(self, data, args, convert_to_ptepm=True):
 
+        # (px1, py1, pz1, m1, px2, py2, pz2, m2, mjj, truth) 
+
         self.args = args
-        self.data = data  
+        self.data = data
         if convert_to_ptepm:
             self.data[:, :4] = em2ptepm(data[:, :4])    # input is in 'em' coords: (px,py,pz,m)
             self.data[:, 4:8] = em2ptepm(data[:, 4:8])   
@@ -53,53 +55,45 @@ class EventTransform:
 
     def normalize(self, inverse=False):
         if not inverse:
-            self.max = torch.max(self.dijet)
-            self.min = torch.min(self.dijet)
-            self.data[:, :4] = (self.data[:, :4] - self.min) / (self.max - self.min) 
-            self.data[:, 4:8] = (self.data[:, 4:8] - self.min) / (self.max - self.min)
+            self.max, _ = torch.max(self.data, dim=0)
+            self.min, _ = torch.min(self.data, dim=0)
+            self.data = (self.data - self.min) / (self.max - self.min) 
         else:
-            self.data[:, :4] = self.data[:, :4] * (self.max - self.min) + self.min
-            self.data[:, 4:8] = self.data[:, 4:8] * (self.max - self.min) + self.min 
+            self.data = self.data * (self.max - self.min) + self.min 
         return self
 
     def standardize(self, inverse=False):
         if not inverse:
-            self.mean[:4] = torch.mean(self.data[:, :4], dim=0)
-            self.std[:4] = torch.std(self.data[:, :4], dim=0)
-            self.mean[4:] = torch.mean(self.data[:, 4:8], dim=0)
-            self.std[4:] = torch.std(self.data[:, 4:8], dim=0)
-            self.data[:, :4] = (self.leading - self.mean[:4]) / self.std[:4]
-            self.data[:, 4:8] = (self.subleading - self.mean[4:]) / self.std[4:]
+            self.mean = torch.mean(self.data, dim=0)
+            self.std = torch.std(self.data, dim=0)
+            self.data = (self.data - self.mean) / self.std
         else:
-            self.data[:, :4] = self.leading * self.std[:4] + self.mean[:4]
-            self.data[:, 4:8] = self.subleading * self.std[4:] + self.mean[4:]
+            self.data = self.data * self.std + self.mean
         return self
 
     def logit_transform(self, alpha=1e-6, inverse=False):
         if not inverse:
-            self.data[:, :4] = logit(self.data[:, :4], alpha=alpha)
-            self.data[:, 4:8] = logit(self.data[:, 4:8], alpha=alpha)
+            self.data = logit(self.data, alpha=alpha)
         else:
-            self.data[:, :4] = expit(self.data[:, :4], alpha=alpha)
-            self.data[:, 4:8] = expit(self.data[:, 4:8], alpha=alpha)
+            self.data = expit(self.data, alpha=alpha)
         return self
 
     def preprocess(self, alpha=1e-6, reverse=False, verbose=True):
         if not reverse:
-            if verbose: print('INFO: reversing preprocessed data')
+            if verbose: print('INFO: preprocessing data')
             self.normalize()
             self.logit_transform(alpha=alpha)
             self.standardize()
         else:
-            if verbose: print('INFO: preprocessing data')
+            if verbose: print('INFO: reversing preprocessed data')
             self.standardize(inverse=True)
             self.logit_transform(alpha=alpha, inverse=True)
             self.normalize(inverse=True)
         return self
 
-    def plot_jet_features(self, title, bins=100, save_dir=None):
+    def plot_jet_features(self, title, bins=100, save_dir=None, xlim=False):
         if not save_dir: save_dir = self.args.workdir
-        jet_plot_routine(self.data, bins=bins, title=title, save_dir=save_dir)
+        jet_plot_routine_single(self.data, bins=bins, title=title, save_dir=save_dir, xlim=xlim)
 
     def to_device(self):
         self.data = self.data.to(self.args.device)

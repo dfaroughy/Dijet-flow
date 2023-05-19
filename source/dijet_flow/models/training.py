@@ -41,11 +41,11 @@ class Model:
                 chunks = torch.tensor_split(context, num_batches)
             else: 
                 chunks = [False] * num_batches
+            print("INFO: generating {} jets from model".format(num_samples))
             n, r = divmod(num_samples, num_batches)
             num_samples = [n] * num_batches
             num_samples[-1] += r
             samples=[]
-            print("INFO: generating {} jets from model".format(num_samples))
             for i in range(num_batches):
                 num = num_samples[i]
                 chunk = chunks[i]

@@ -16,6 +16,8 @@ from dijet_flow.models.flows.norm_flows import masked_autoregressive_flow, coupl
 from dijet_flow.models.training import Model
 from dijet_flow.models.loss import neglogprob_loss
 from dijet_flow.data.transform import EventTransform 
+from dijet_flow.data.plots import jet_plot_routine
+
 
 sys.path.append("../")
 torch.set_default_dtype(torch.float64)
@@ -36,7 +38,7 @@ torch.set_default_dtype(torch.float64)
 
 params = argparse.ArgumentParser(description='arguments for the flow model')
 
-params.add_argument('--device',       default='cuda:2',           help='where to train')
+params.add_argument('--device',       default='cuda:1',           help='where to train')
 params.add_argument('--dim',          default=8,                  help='dim of data: (pT1,eta1,phi1,m1,pT2,eta2,phi2,m2)', type=int)
 params.add_argument('--loss',         default=neglogprob_loss,    help='loss function')
 
@@ -47,7 +49,7 @@ params.add_argument('--dim_flow',     default=8,            help='dimension of i
 params.add_argument('--flow_func',    default='RQSpline',   help='type of flow transformation: affine or RQSpline', type=str)
 params.add_argument('--coupl_mask',   default='mid-split',  help='mask type [only for coupling flows]: mid-split or checkers', type=str)
 params.add_argument('--permutation',  default='inverse',    help='type of fixed permutation between flows: n-cycle or inverse', type=str)
-params.add_argument('--num_flows',    default=32,           help='num of flow layers', type=int)
+params.add_argument('--num_flows',    default=8,           help='num of flow layers', type=int)
 params.add_argument('--dim_hidden',   default=128,          help='dimension of hidden layers', type=int)
 params.add_argument('--num_spline',   default=30,           help='num of spline for rational_quadratic', type=int)
 params.add_argument('--num_blocks',   default=2,            help='num of MADE blocks in flow', type=int)
@@ -55,10 +57,10 @@ params.add_argument('--dim_context',  default=1,            help='dimension of c
 
 #...training params:
 
-params.add_argument('--batch_size',    default=2048,         help='size of training/testing batch', type=int)
+params.add_argument('--batch_size',    default=1024,         help='size of training/testing batch', type=int)
 params.add_argument('--num_steps',     default=0,            help='split batch into n_steps sub-batches + gradient accumulation', type=int)
 params.add_argument('--test_size',     default=0.2,          help='fraction of testing data', type=float)
-params.add_argument('--max_epochs',    default=20,           help='max num of training epochs', type=int)
+params.add_argument('--max_epochs',    default=1 ,           help='max num of training epochs', type=int)
 params.add_argument('--max_patience',  default=20,           help='terminate if test loss is not changing', type=int)
 params.add_argument('--lr',            default=1e-4,         help='learning rate of generator optimizer', type=float)
 params.add_argument('--activation',    default=F.leaky_relu, help='activation function for neural networks')
@@ -69,12 +71,6 @@ params.add_argument('--seed',          default=999,          help='random seed f
 #... data params:
 
 params.add_argument('--mass_window', default=(0,3300,3700,13000), help='bump hunt mass window: SB1, SR, SB2', type=tuple)
-params.add_argument('--num_gen',     default=10000,                  help='number of sampled events from model', type=int)
-# params.add_argument('--mean',        default=[],                    help='data mean (for preprocessing)', type=list)
-# params.add_argument('--std',         default=[],                    help='data covariance (for preprocessing)', type=list)
-# params.add_argument('--min',         default=None,                  help='data min (for preprocessing)', type=float)
-# params.add_argument('--max',         default=None,                  help='data max (for preprocessing)', type=float)
-
 
 ####################################################################################################################
 
@@ -93,24 +89,25 @@ if __name__ == '__main__':
 
     #...get SB events and preprocess data
 
-    events_bckg = EventTransform(data, args)
-    events_bckg.get_sidebands()
-    events_bckg.preprocess()
+    side_bands = EventTransform(data, args)
+    side_bands.compute_mjj()
+    side_bands.get_sidebands()
+    side_bands.preprocess()
 
     #...store parser arguments
 
-    args.num_jets = events_bckg.num_jets
-    args.num_gen = events_bckg.num_jets
-    args.mean = events_bckg.mean.tolist()
-    args.std = events_bckg.std.tolist()
-    args.max = events_bckg.max.tolist()
-    args.min = events_bckg.min.tolist()
+    args.num_jets = side_bands.num_jets
+    args.num_gen = side_bands.num_jets
+    args.mean = side_bands.mean.tolist()
+    args.std = side_bands.std.tolist()
+    args.max = side_bands.max.tolist()
+    args.min = side_bands.min.tolist()
     print("INFO: num sideband jets: {}".format(args.num_jets))
     save_arguments(args, name='inputs.json')
 
     # #...Prepare train/test samples from sidebands
 
-    train, test  = train_test_split(events_bckg.data, test_size=args.test_size, random_state=args.seed)
+    train, test  = train_test_split(side_bands.data, test_size=args.test_size, random_state=args.seed)
 
     # #...define model
 
@@ -129,20 +126,23 @@ if __name__ == '__main__':
 
     context = EventTransform(data, args)
     context.get_signal_region()
-    context.plot_jet_features(title='jet features truth SR', save_dir=args.workdir+'/data_plots')
+    context.preprocess()
 
     # sample from model with mjj context:
 
     sample = model.sample(context=context.mjj)
     sample = torch.cat((sample, torch.zeros(sample.shape[0],1)), dim=1)
     sample_SR = EventTransform(sample, args, convert_to_ptepm=False)
-    sample_SR.mean = events_bckg.mean
-    sample_SR.std = events_bckg.std
-    sample_SR.min = events_bckg.min
-    sample_SR.max = events_bckg.max
+    sample_SR.mean = side_bands.mean
+    sample_SR.std = side_bands.std
+    sample_SR.min = side_bands.min
+    sample_SR.max = side_bands.max
     sample_SR.preprocess(reverse=True)
     sample_SR.compute_mjj()
-    sample_SR.plot_jet_features(title='jet features generated SR', save_dir=args.workdir+'/results_plots')
+
+    side_bands.preprocess(reverse=True)
+    jet_plot_routine((side_bands.data[:sample_SR.data.shape[0]], sample_SR.data), title='jet features generated SR ', save_dir=args.workdir+'/results_plots', xlim=True)
+
 
 
 
