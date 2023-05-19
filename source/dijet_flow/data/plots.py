@@ -27,15 +27,16 @@ def jet_plot_routine(data,
                     save_dir,  
                     bins=50,
                     figsize=(20, 15),
-                    xlim=False
+                    xlim=False,
+                    mass_window=[3300,3700]
                     ):
 
     print("INFO: plotting -> {}".format(title))
-    colors = ['k', 'r', 'b', 'g'] # Add more colors here if needed    
+    colors = ['k', 'k']    
     fig, axes = plt.subplots(3, 4, figsize=figsize)
 
-    for d_idx, dataset in enumerate(data):
-     
+    for i, dataset in enumerate(data):
+
         jet1 = [ dataset[:, 0], dataset[:, 1], dataset[:, 2], dataset[:, 3] ]
         jet2 = [ dataset[:, 4], dataset[:, 5], dataset[:, 6], dataset[:, 7] ]
         
@@ -54,33 +55,39 @@ def jet_plot_routine(data,
 
             bin_edges = np.linspace(xlim_llf[idx][0], xlim_llf[idx][1], bins)
 
-            sns.histplot(x=jet1[idx], bins=bin_edges, color=colors[d_idx], ax=axes[0, idx], element="step", fill=False)
+            plot = sns.histplot(x=jet1[idx], bins=bin_edges, color=colors[i], ax=axes[0, idx], element="step", fill=False)
             if xlim: axes[0, idx].set_xlim(xlim_llf[idx])
             axes[0, idx].set_xlabel(llf+' jet 1')
             axes[0, idx].set_ylabel('counts')
             axes[0, idx].grid()
+            if i==0: plot.lines[0].set_linestyle("--")
 
-            sns.histplot(x=jet2[idx], bins=bin_edges, color=colors[d_idx], ax=axes[1, idx], element="step", fill=False)
+            plot = sns.histplot(x=jet2[idx], bins=bin_edges, color=colors[i], ax=axes[1, idx], element="step", fill=False)
             if xlim: axes[1, idx].set_xlim(xlim_llf[idx])
             axes[1, idx].set_xlabel(llf+' jet 2')
             axes[1, idx].set_ylabel('counts')
             axes[1, idx].grid()
+            if i==0: plot.lines[0].set_linestyle("--")  # Line style set to dashed for data2
+
         
         for idx, hlf  in enumerate(high_level_feat):
 
             bin_edges = np.linspace(xlim_hlf[idx][0], xlim_hlf[idx][1], bins)
 
-            sns.histplot(x=dijet[idx], bins=bin_edges, color=colors[d_idx], ax=axes[2, idx], element="step", fill=False)
+            plot = sns.histplot(x=dijet[idx], bins=bin_edges, color=colors[i], ax=axes[2, idx], element="step", fill=False)
             if xlim: axes[2, idx].set_xlim(xlim_hlf[idx])
             axes[2, idx].set_xlabel(hlf)
             axes[2, idx].set_ylabel('counts')
             axes[2, idx].grid()
+            if i==0: plot.lines[0].set_linestyle("--")  # Line style set to dashed for data2
+            if idx==0: 
+                axes[2, 0].axvline(x=mass_window[0], color='grey', linestyle='--', lw=0.75)
+                axes[2, 0].axvline(x=mass_window[1], color='grey', linestyle='--', lw=0.75)
 
     fig.suptitle(title)
     fig.tight_layout()
     plt.savefig(save_dir+'/{}.png'.format(title.replace(" ", "_")))
         
-
 
 
 def jet_plot_routine_single( data, 

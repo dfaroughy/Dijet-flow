@@ -78,3 +78,7 @@ def get_gpu_memory():
         'allocated': allocated,
         'free': free
     }
+
+def shuffle(tensor) -> torch.Tensor:
+    indices = torch.randperm(tensor.size(0))
+    return tensor[indices]

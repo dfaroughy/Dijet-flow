@@ -12,7 +12,9 @@ class EventTransform:
         # (px1, py1, pz1, m1, px2, py2, pz2, m2, mjj, truth) 
 
         self.args = args
-        self.data = data
+        self.data = data[:, :9]
+        self.truth = data[:, -1]
+
         if convert_to_ptepm:
             self.data[:, :4] = em2ptepm(data[:, :4])    # input is in 'em' coords: (px,py,pz,m)
             self.data[:, 4:8] = em2ptepm(data[:, 4:8])   
@@ -28,14 +30,18 @@ class EventTransform:
     def subleading(self):
         return self.data[:, 4:8]
     @property
-    def dijet(self):
-        return self.data[:, :8]
-    @property
     def mjj(self):
         return torch.unsqueeze(self.data[:, -1],1)
     @property
     def num_jets(self):
         return self.data.shape[0]
+
+    def get_truth(self, kind):
+        if kind=='background':
+            self.data = self.data[self.truth==0]
+        elif kind=='signal':
+            self.data = self.data[self.truth==1]
+        return self
 
     def compute_mjj(self):
         self.data[:,-1] = inv_mass(self.data[:, :4], self.data[:, 4:8], coord='ptepm')

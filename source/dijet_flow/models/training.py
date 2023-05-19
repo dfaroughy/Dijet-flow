@@ -54,7 +54,11 @@ class Model:
                 samples.append(batch_sample.cpu().detach())
             samples = torch.squeeze(torch.cat(samples, dim=0), 1)
         return samples
-        
+
+    def load_state(self, path):
+        self.model.load_state_dict(torch.load(path))
+        return self
+
 class Train_Epoch(nn.Module):
 
     def __init__(self, model, args):
