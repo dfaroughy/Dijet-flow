@@ -1,11 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
-import seaborn as sns
-from scipy.stats import gaussian_kde
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scipy import stats
-from dijet_flow.utils.base import savefig, deltaR, dphi, deta
+
+from dijet_flow.utils.base import savefig
+from dijet_flow.utils.collider import deltaR, dphi, deta
 
 sns.set_theme(style="dark")
 
@@ -28,7 +26,6 @@ def jet_plot_routine( data,
                       title, 
                       save_dir,  
                       bins=100,
-                      xlim=[(500, 2500), (-2.5, 2.5), (-4, 4), (0, 800)], 
                       figsize=(20, 15)
                     ):
 
@@ -36,7 +33,7 @@ def jet_plot_routine( data,
     jet1 = [ data[:, 0], data[:, 1], data[:, 2], data[:, 3] ]
     jet2 = [ data[:, 4], data[:, 5], data[:, 6], data[:, 7] ]
     low_level_feat = [r'$p_t$ (GeV)',r'$\eta$',r'$\phi$',r'$m$ (GeV)']
-    xlim_llf = [(500, 2500), (-2.5, 2.5), (-4, 4), (0, 800)]
+    xlim_llf = [(500, 2500), (-.005, .005), (-.005, .005), (0, 800)]
 
     mjj = data[:,-1]
     del_phi = dphi(data[:, :4], data[:, 4:8])
@@ -44,7 +41,7 @@ def jet_plot_routine( data,
     del_R = deltaR(data[:, :4], data[:, 4:8])
     dijet = [mjj, del_eta, del_phi, del_R ]
     high_level_feat = [r'$m_{jj}$ (GeV)', r'$\Delta\eta$',r'$\Delta\phi$',r'$\Delta R$']
-    xlim_hlf = [(1000, 6000), (-5, 5), (-5, 5), (0, 5)]
+    xlim_hlf = [(3100, 3900), (-.005, .005), (-.005, .005), (0, .005)]
 
 
     fig, axes = plt.subplots(3, 4, figsize=figsize)

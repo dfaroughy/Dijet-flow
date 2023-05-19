@@ -1,13 +1,11 @@
-import time
-import numpy as np
-import pandas as pd
 import torch
 
 from dijet_flow.data.plots import jet_plot_routine
-from dijet_flow.utils.base import em2ptepm, logit, expit, inv_mass
+from dijet_flow.utils.functions import logit, expit
+from dijet_flow.utils.collider import em2ptepm, inv_mass
 
 
-class Transform:
+class EventTransform:
 
     def __init__(self, data, args, convert_to_ptepm=True):
 
@@ -32,7 +30,7 @@ class Transform:
         return self.data[:, :8]
     @property
     def mjj(self):
-        return self.data[:, -1]
+        return torch.unsqueeze(self.data[:, -1],1)
     @property
     def num_jets(self):
         return self.data.shape[0]
@@ -102,5 +100,9 @@ class Transform:
     def plot_jet_features(self, title, bins=100, save_dir=None):
         if not save_dir: save_dir = self.args.workdir
         jet_plot_routine(self.data, bins=bins, title=title, save_dir=save_dir)
+
+    def to_device(self):
+        self.data = self.data.to(self.args.device)
+        return self
 
 

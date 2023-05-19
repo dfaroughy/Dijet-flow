@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 def permutation_layer(args):
     dim=args.dim

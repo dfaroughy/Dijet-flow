@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import nflows
 from nflows import flows, transforms, distributions
 from dijet_flow.models.flows.permutation import permutation_layer
