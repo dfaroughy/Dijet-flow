@@ -7,7 +7,7 @@ import json
 import inspect
 import argparse
 
-def make_dir(path, overwrite=False, sub_dirs=False):  
+def make_dir(path, overwrite=False, sub_dirs=False, verbose=True):  
     Directory = path
     if overwrite:
         shutil.rmtree(Directory, ignore_errors=True)
@@ -23,9 +23,10 @@ def make_dir(path, overwrite=False, sub_dirs=False):
     if sub_dirs:
         for d in sub_dirs: 
             os.mkdir(Directory+'/'+d)
-    print("#================================================")
-    print("INFO: working directory: {}".format(Directory))
-    print("#================================================")
+    if verbose:
+        print("#================================================")
+        print("INFO: working directory: {}".format(Directory))
+        print("#================================================")
     return Directory
 
 
