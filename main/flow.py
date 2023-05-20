@@ -51,7 +51,7 @@ params.add_argument('--coupl_mask',   default='mid-split',  help='mask type [onl
 params.add_argument('--permutation',  default='inverse',    help='type of fixed permutation between flows: n-cycle or inverse', type=str)
 params.add_argument('--num_flows',    default=16,           help='num of flow layers', type=int)
 params.add_argument('--dim_hidden',   default=128,          help='dimension of hidden layers', type=int)
-params.add_argument('--num_spline',   default=30,           help='num of spline for rational_quadratic', type=int)
+params.add_argument('--num_spline',   default=35,           help='num of spline for rational_quadratic', type=int)
 params.add_argument('--num_blocks',   default=2,            help='num of MADE blocks in flow', type=int)
 params.add_argument('--dim_context',  default=1,            help='dimension of context features', type=int)
 
@@ -60,7 +60,7 @@ params.add_argument('--dim_context',  default=1,            help='dimension of c
 params.add_argument('--batch_size',    default=1024,         help='size of training/testing batch', type=int)
 params.add_argument('--num_steps',     default=0,            help='split batch into n_steps sub-batches + gradient accumulation', type=int)
 params.add_argument('--test_size',     default=0.2,          help='fraction of testing data', type=float)
-params.add_argument('--max_epochs',    default=1000 ,           help='max num of training epochs', type=int)
+params.add_argument('--max_epochs',    default=2000 ,           help='max num of training epochs', type=int)
 params.add_argument('--max_patience',  default=20,           help='terminate if test loss is not changing', type=int)
 params.add_argument('--lr',            default=1e-4,         help='learning rate of generator optimizer', type=float)
 params.add_argument('--activation',    default=F.leaky_relu, help='activation function for neural networks')

@@ -31,11 +31,10 @@ params.add_argument('--dir', type=str)
 if __name__ == '__main__':
 
     #...get model params
-
     args = params.parse_args()
+    make_dir(args.dir+'/plots', overwrite=True)
     with open(args.dir + '/inputs.json', 'r') as f: model_inputs = json.load(f)
     args = argparse.Namespace(**model_inputs)
-    args.workdir = make_dir('Test_dijet_density', sub_dirs=['plots'], overwrite=True)
     args.activation = getattr(F, args.activation)
 
     #...get datasets
@@ -55,6 +54,7 @@ if __name__ == '__main__':
     context = EventTransform(context, args)
     context.get_signal_region()
     context.preprocess()
+
     args.num_jets = context.num_jets
     args.num_gen = context.num_jets
     args.mean = context.mean.tolist()
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     #...load model
 
-    model.load_state(path='Results_dijet_density__2/best_model.pth')
+    model.load_state(path=args.workdir+'/best_model.pth')
 
     #...define template model
 
