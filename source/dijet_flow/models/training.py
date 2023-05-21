@@ -17,8 +17,8 @@ class Model:
         self.args = args
 
     def train(self, training_sample, validation_sample, show_plots=True, save_best_state=True):        
-        train = Train_Epoch(self.model, self.args)
-        test = Evaluate_Epoch(self.model, self.args)
+        train = Train_Step(self.model, self.args)
+        test = Test_Step(self.model, self.args)
         optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.args.lr)  
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.args.max_epochs)
         print("INFO: start training") 
@@ -33,36 +33,35 @@ class Model:
         torch.cuda.empty_cache()
         return test.best_model
 
+    @torch.no_grad()
     def sample(self, num_batches=1, context=False):
-        self.model.eval()
-        with torch.no_grad(): 
-            if torch.is_tensor(context): 
-                num_samples = context.size(0)
-                chunks = torch.tensor_split(context, num_batches)
-            else: 
-                chunks = [False] * num_batches
-            print("INFO: generating {} jets from model".format(num_samples))
-            n, r = divmod(num_samples, num_batches)
-            num_samples = [n] * num_batches
-            num_samples[-1] += r
-            samples=[]
-            for i in range(num_batches):
-                num = num_samples[i]
-                chunk = chunks[i]
-                chunk = chunk.to(self.args.device)
-                batch_sample = self.model.sample(num_samples=1, context=chunk)
-                samples.append(batch_sample.cpu().detach())
-            samples = torch.squeeze(torch.cat(samples, dim=0), 1)
+        if torch.is_tensor(context): 
+            num_samples = context.size(0)
+            chunks = torch.tensor_split(context, num_batches)
+        else: 
+            chunks = [False] * num_batches
+        print("INFO: generating {} jets from model".format(num_samples))
+        n, r = divmod(num_samples, num_batches)
+        num_samples = [n] * num_batches
+        num_samples[-1] += r
+        samples=[]
+        for i in range(num_batches):
+            num = num_samples[i]
+            chunk = chunks[i]
+            chunk = chunk.to(self.args.device)
+            batch_sample = self.model.sample(num_samples=1, context=chunk)
+            samples.append(batch_sample.cpu().detach())
+        samples = torch.squeeze(torch.cat(samples, dim=0), 1)
         return samples
 
     def load_state(self, path):
         self.model.load_state_dict(torch.load(path))
         return self
 
-class Train_Epoch(nn.Module):
+class Train_Step(nn.Module):
 
     def __init__(self, model, args):
-        super(Train_Epoch, self).__init__()
+        super(Train_Step, self).__init__()
         self.model = model
         self.loss = 0
         self.loss_per_epoch = []
@@ -92,10 +91,10 @@ class Train_Epoch(nn.Module):
         self.loss_per_epoch.append(self.loss)
         print("\t Training loss: {}".format(self.loss))
 
-class Evaluate_Epoch(nn.Module):
+class Test_Step(nn.Module):
 
     def __init__(self, model, args):
-        super(Evaluate_Epoch, self).__init__()
+        super(Test_Step, self).__init__()
         self.model = model
         self.loss = 0
         self.loss_per_epoch = []
@@ -106,6 +105,7 @@ class Evaluate_Epoch(nn.Module):
         self.terminate = False
         self.args = args
 
+    @torch.no_grad()
     def validate(self, data):
         self.model.eval()
         self.loss = 0
@@ -123,6 +123,7 @@ class Evaluate_Epoch(nn.Module):
                 self.loss += sub_batch_loss / len(data)
         self.loss_per_epoch.append(self.loss)
 
+    @torch.no_grad()
     def check_patience(self, show_plots=True, save_best_state=True):
         self.model.eval()
         if self.loss < self.loss_min:
