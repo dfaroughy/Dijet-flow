@@ -38,7 +38,7 @@ torch.set_default_dtype(torch.float64)
 
 params = argparse.ArgumentParser(description='arguments for the flow model')
 
-params.add_argument('--device',       default='cuda:1',           help='where to train')
+params.add_argument('--device',       default='cuda:0',           help='where to train')
 params.add_argument('--dim',          default=8,                  help='dim of data: (pT1,eta1,phi1,m1,pT2,eta2,phi2,m2)', type=int)
 params.add_argument('--loss',         default=neglogprob_loss,    help='loss function')
 
@@ -53,14 +53,14 @@ params.add_argument('--num_flows',    default=16,           help='num of flow la
 params.add_argument('--dim_hidden',   default=128,          help='dimension of hidden layers', type=int)
 params.add_argument('--num_spline',   default=35,           help='num of spline for rational_quadratic', type=int)
 params.add_argument('--num_blocks',   default=2,            help='num of MADE blocks in flow', type=int)
-params.add_argument('--dim_context',  default=1,            help='dimension of context features', type=int)
+params.add_argument('--dim_context',  default=1,            help='dimension of context features: mjj', type=int)
 
 #...training params:
 
 params.add_argument('--batch_size',    default=1024,         help='size of training/testing batch', type=int)
 params.add_argument('--num_steps',     default=0,            help='split batch into n_steps sub-batches + gradient accumulation', type=int)
 params.add_argument('--test_size',     default=0.2,          help='fraction of testing data', type=float)
-params.add_argument('--max_epochs',    default=2000 ,           help='max num of training epochs', type=int)
+params.add_argument('--max_epochs',    default=1000 ,           help='max num of training epochs', type=int)
 params.add_argument('--max_patience',  default=20,           help='terminate if test loss is not changing', type=int)
 params.add_argument('--lr',            default=1e-4,         help='learning rate of generator optimizer', type=float)
 params.add_argument('--activation',    default=F.leaky_relu, help='activation function for neural networks')
@@ -70,7 +70,7 @@ params.add_argument('--seed',          default=999,          help='random seed f
 
 #... data params:
 
-params.add_argument('--mass_window', default=(0,3300,3700,13000), help='bump hunt mass window: SB1, SR, SB2', type=tuple)
+params.add_argument('--mass_window', default=(0,3200,3700,13000), help='bump hunt mass window: SB1, SR, SB2', type=tuple)
 
 ####################################################################################################################
 
@@ -85,11 +85,8 @@ if __name__ == '__main__':
 
     file =  "./data/events_anomalydetection_v2.features_with_jet_constituents.h5"
     data = torch.tensor(pd.read_hdf(file).to_numpy())
-    # data = torch.cat((data[:, :4], data[:, 7:11], torch.unsqueeze(data[:, -2], dim=1)), dim=1)  # d=9: (jet1, jet2, mjj)
-
     data = torch.cat((data[:, :4], data[:, 7:11], data[:, -2:]), dim=1)  # d=9: (jet1, jet2, mjj, truth_label)
     data = shuffle(data)
-
 
     #...get SB events and preprocess data
 

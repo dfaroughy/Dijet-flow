@@ -32,7 +32,7 @@ def jet_plot_routine(data,
                     ):
 
     print("INFO: plotting -> {}".format(title))
-    colors = ['k', 'k']    
+    colors = ['r', 'k']    
     fig, axes = plt.subplots(3, 4, figsize=figsize)
 
     for i, dataset in enumerate(data):

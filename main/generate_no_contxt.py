@@ -43,23 +43,11 @@ if __name__ == '__main__':
     data = torch.tensor(pd.read_hdf(file).to_numpy())
     data = torch.cat((data[:, :4], data[:, 7:11], data[:, -2:]), dim=1)  # d=9: (jet1, jet2, mjj, truth_label)
     data = shuffle(data)
-    context, bckg_truth = train_test_split(data, test_size=0.5, random_state=2487162)
 
     #...get SB events and preprocess data
 
-    bckg_truth = EventTransform(bckg_truth, args)
-    context = EventTransform(context, args)
-    bckg_truth.compute_mjj()
-    context.compute_mjj()
-    context.preprocess()
-
-    args.num_jets = context.num_jets
-    args.num_gen = context.num_jets
-    args.mean = context.mean.tolist()
-    args.std = context.std.tolist()
-    args.max = context.max.tolist()
-    args.min = context.min.tolist()
-    print("INFO: num context jets: {}".format(args.num_jets))
+    full_data= EventTransform(data, args)
+    full_data.compute_mjj()
 
     #...define template model
 
@@ -74,8 +62,8 @@ if __name__ == '__main__':
 
     #...define template model
 
-    sample = model.sample(context=context.mjj[:bckg_truth.num_jets], num_batches=10)
-
+    sample = model.sample(num_samples=full_data.num_jets, num_batches=10)
+    
     sample = torch.cat((sample, torch.zeros(sample.shape[0],1)), dim=1)
     sample = EventTransform(sample, args, convert_to_ptepm=False)
     sample.mean = torch.tensor(args.mean)
@@ -85,7 +73,7 @@ if __name__ == '__main__':
     sample.preprocess(reverse=True)
     sample.compute_mjj()
 
-    jet_plot_routine((sample.data, bckg_truth.data), 
+    jet_plot_routine((sample.data, full_data.data), 
                      title='jet features generated SR ', save_dir=args.workdir+'/plots')
 
 

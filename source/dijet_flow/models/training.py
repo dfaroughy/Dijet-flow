@@ -34,23 +34,29 @@ class Model:
         return test.best_model
 
     @torch.no_grad()
-    def sample(self, num_batches=1, context=False):
+    def sample(self, num_samples=10000, num_batches=1, context=False):
+
         if torch.is_tensor(context): 
-            num_samples = context.size(0)
+            num_samples = context.shape[0]
             chunks = torch.tensor_split(context, num_batches)
         else: 
             chunks = [False] * num_batches
+
         print("INFO: generating {} jets from model".format(num_samples))
+
         n, r = divmod(num_samples, num_batches)
         num_samples = [n] * num_batches
         num_samples[-1] += r
         samples=[]
+
         for i in range(num_batches):
+
             num = num_samples[i]
             chunk = chunks[i]
-            chunk = chunk.to(self.args.device)
-            batch_sample = self.model.sample(num_samples=1, context=chunk)
+            chunk = chunk.to(self.args.device) if torch.is_tensor(context) else None
+            batch_sample = self.model.sample(num_samples=(1 if torch.is_tensor(context) else num), context=chunk)
             samples.append(batch_sample.cpu().detach())
+
         samples = torch.squeeze(torch.cat(samples, dim=0), 1)
         return samples
 
